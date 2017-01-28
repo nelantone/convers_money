@@ -1,2 +1,2 @@
-$LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
-require "convers_money"
+$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
+require 'convers_money'
