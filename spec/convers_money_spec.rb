@@ -5,7 +5,6 @@ describe ConversMoney do
 
   let(:money) do
     ConversMoney.conversion_rates 'EUR', { 'USD' => 1.11, 'Bitcoin' => 0.0047 }
-    ConversMoney.conversion_rates 'USD', { 'EUR' => 1.14, 'btc' => 0.0011 }
     described_class.new(5, 'EUR')
   end
 
@@ -58,28 +57,42 @@ describe ConversMoney do
       let(:not_converted_money) { money.convert_to(same_currency) }
 
       it 'gives the same result and currency if we try to convert to the same currency' do
-        expect(not_converted_money.inspect).to eql('5.00 EUR')
+        expect(not_converted_money).to have_attributes(:amount => 5.00, :currency => 'EUR')
       end
     end
   end
 
   context 'operate with valid ConversMoney intances' do
     before do
-      money
+      ConversMoney.conversion_rates 'EUR', { 'USD' => 1.11, 'Bitcoin' => 0.0047 }
     end
 
     let(:fifty_eur)  { described_class.new(50, 'EUR') }
     let(:twenty_usd) { described_class.new(20, 'USD') }
 
     describe '#+' do
-      let(:add_operation) { fifty_eur + twenty_usd }
+      let(:add_operation)                  { twenty_usd + fifty_eur }
+      let(:add_inverse_currency_operation) { fifty_eur + twenty_usd }
+      let(:add_instance_with_a_float)      { twenty_usd + 20.00 }
 
-      it 'expect to add variables in different currencies' do
-        expect(add_operation.inspect).to eql('72.80 EUR')
+      it 'expect to add variables in different currencies and return the currect amout and currency' do
+        expect(add_operation).to have_attributes( :amount => 75.50  , :currency => 'USD')
       end
 
-      it 'expect to be add_operation a ConversMoney class' do
+      it 'expect to add none fixed rate variables inverting conversion rates' do
+        expect(add_inverse_currency_operation).to have_attributes( :amount => 68.02, :currency =>'EUR')
+      end
+
+      it 'expect to add an ConversMoney instance with a float' do
+        expect(add_instance_with_a_float).to have_attributes( :amount => 40.0, :currency =>'USD')
+      end
+
+      it 'expect add_operation to return a ConversMoney class/instance' do
         expect(add_operation).to be_an_instance_of(ConversMoney)
+      end
+
+      it 'expect add_inverse_currency_operation to return a ConversMoney class' do
+        expect(add_inverse_currency_operation).to be_an_instance_of(ConversMoney)
       end
 
       context 'when the currency is the same' do
@@ -87,20 +100,30 @@ describe ConversMoney do
         let(:add_operation_in_eur) { fifty_eur + twenty_eur }
 
         it 'expect to add variables with the same currency' do
-          expect(add_operation_in_eur.inspect).to eql('70.00 EUR')
+          expect(add_operation_in_eur).to have_attributes( :amount => 70.00, :currency => 'EUR')
         end
       end
     end
 
     describe '#-' do
-      let(:substract_operation) { fifty_eur - twenty_usd }
+      let(:substract_operation)                  { fifty_eur - twenty_usd }
+      let(:substract_instance_with_a_float)      { twenty_usd - 20.00 }
+      let(:substract_inverse_currency_operation) { fifty_eur - twenty_usd }
 
-      it 'expect to be able to substract variables in different currencies' do
-        expect(substract_operation.inspect).to eql('27.20 EUR')
+      it 'expect to substract none fixed rate variables inverting conversion rates' do
+        expect(substract_inverse_currency_operation).to have_attributes(:amount => 31.98, :currency =>'EUR')
       end
 
-      it 'expect to be substract_operation a ConversMoney class' do
+      it 'expect to substract variables in different currencies' do
+        expect(substract_operation).to have_attributes(:amount => 31.98, :currency =>'EUR')
+      end
+
+      it 'expect substract_operation to be ConversMoney class/instance' do
         expect(substract_operation).to be_an_instance_of(ConversMoney)
+      end
+
+      it 'expect to substract ConversMoney instance with a float' do
+        expect(substract_instance_with_a_float).to have_attributes(:amount => 0, :currency =>'USD')
       end
 
       context 'when the currency is the same' do
@@ -108,40 +131,57 @@ describe ConversMoney do
         let(:substract_operation_in_eur) { fifty_eur - twenty_eur }
 
         it 'expect to substract variables with the same currency' do
-          expect(substract_operation_in_eur.inspect).to eql('30.00 EUR')
+          expect(substract_operation_in_eur).to have_attributes(:amount => 30.0, :currency => 'EUR')
         end
       end
     end
 
     describe '#*' do
-      let(:multiply_operation) { fifty_eur * twenty_usd }
+      let(:multiply_operation)                    { fifty_eur * twenty_usd }
+      let(:multiply_instance_with_a_float)        { twenty_usd * 20.00 }
+      let(:multiply_inverse_currency_operation)   { fifty_eur * twenty_usd }
+
+      it 'expect to multiply none fixed rate variables inverting conversion rates' do
+        expect(multiply_inverse_currency_operation).to have_attributes(:amount => 901.0, :currency => 'EUR')
+      end
 
       it 'expect to multiply variables in different currencies' do
-        expect(multiply_operation.inspect).to eql('1140.00 EUR')
+        expect(multiply_operation).to have_attributes(:amount => 901.0, :currency => 'EUR')
       end
 
       it 'expect to be multiply_operation a ConversMoney class' do
         expect(multiply_operation).to be_an_instance_of(ConversMoney)
       end
 
+      it 'expect to multiply an ConversMoney instance with a float' do
+        expect(multiply_instance_with_a_float).to have_attributes(:amount => 400.0, :currency => 'USD')
+      end
+
       context 'when the currency is the same' do
-        let(:twenty_eur) { ConversMoney.new(20, 'EUR') }
+        let(:twenty_eur)                { ConversMoney.new(20, 'EUR') }
         let(:multiply_operation_in_eur) { fifty_eur * twenty_eur }
+
         it 'expect to multiply variables with the same currency' do
-          expect(multiply_operation_in_eur.inspect).to eql('1000.00 EUR')
+          expect(multiply_operation_in_eur).to have_attributes(:amount => 1000.0, :currency => 'EUR')
         end
       end
     end
 
     describe '#/' do
-      let(:divide_operation) { fifty_eur / twenty_usd }
+      let(:divide_operation)                  { fifty_eur / twenty_usd }
+      let(:divide_instance_with_a_float)      { twenty_usd / 20.00 }
+      let(:divide_inverse_currency_operation) { fifty_eur / twenty_usd }
 
-      it 'expect to be able to divide variables in different currencies' do
-        expect(divide_operation.inspect).to eql('2.19 EUR')
+      it 'expect to divide none fixed rate variables inverting conversion rates' do
+        expect(divide_inverse_currency_operation).to have_attributes(:amount => 2.77, :currency => 'EUR')
       end
 
       it 'expect to be divide_operation a ConversMoney class' do
         expect(divide_operation).to be_an_instance_of(ConversMoney)
+      end
+
+      it 'expect to divide an ConversMoney instance with a float' do
+        expect(divide_instance_with_a_float).to have_attributes(:amount => 1.0, :currency => 'USD')
       end
 
       context 'when the currency is the same' do
@@ -149,15 +189,24 @@ describe ConversMoney do
         let(:add_operation_in_eur) { fifty_eur / twenty_eur }
 
         it 'expect to divide variables with the same currency' do
-          expect(add_operation_in_eur.inspect).to eql('2.00 EUR')
+          expect(add_operation_in_eur).to have_attributes(:amount => 2.0, :currency => 'EUR')
         end
       end
     end
 
     describe '#==' do
-      let(:fifty_eur_equal_twenty_usd)                 { fifty_eur == twenty_usd }
-      let(:fifty_five_point_five_usd)                  { described_class.new(55.50, 'USD') }
-      let(:fifty_five_point_five_usd_equal_fifty_eur)  { fifty_five_point_five_usd == fifty_eur }
+      let(:fifty_eur_equal_twenty_usd)                { fifty_eur == twenty_usd }
+      let(:fifty_five_point_five_usd)                 { described_class.new(55.50, 'USD') }
+      let(:fifty_five_point_five_usd_equal_fifty_eur) { fifty_five_point_five_usd == fifty_eur }
+      let(:compare_instance_with_a_float)             { twenty_usd == 20.00 }
+      let(:dot_forty_nine_nine)                       { described_class.new(0.4999, 'EUR') }
+      let(:dot_fourty_nine_eight_five)                { described_class.new(0.4985, 'EUR') }
+      let(:rouded_amounts_are_equal_in_cents)         { dot_forty_nine_nine == dot_fourty_nine_eight_five }
+      let(:compare_inverse_currency_operation)        { fifty_eur == fifty_five_point_five_usd }
+
+      it 'expect none fixed rate variables to be equal inverting conversion rates' do
+        expect(compare_inverse_currency_operation).to eql(true)
+      end
 
       it 'expect to not be equal' do
         expect(fifty_eur_equal_twenty_usd).to be(false)
@@ -165,6 +214,14 @@ describe ConversMoney do
 
       it 'expect to be equal' do
         expect(fifty_five_point_five_usd_equal_fifty_eur).to be(true)
+      end
+
+      it 'expect to be equal ConversMoney instance with a float' do
+        expect(compare_instance_with_a_float).to eql(true)
+      end
+
+      it 'expect to be rounded amounts equal' do
+        expect(rouded_amounts_are_equal_in_cents).to eq(true)
       end
 
       context 'when the currency is the same' do
@@ -178,15 +235,20 @@ describe ConversMoney do
     end
 
     describe '#>' do
-      let(:fifty_eur_to_be_greater)  { fifty_eur > twenty_usd }
-      let(:twenty_usd_to_be_greater) { twenty_usd > fifty_eur }
+      let(:inverse_currency_operation_to_be_greater)    { fifty_eur > twenty_usd }
+      let(:twenty_usd_to_be_greater)                    { twenty_usd > fifty_eur }
+      let(:twenty_usd_to_be_greater_a_ten_as_float)     { twenty_usd > 10.00 }
 
-      it 'expect first value to be greater' do
-        expect(fifty_eur_to_be_greater).to be(true)
+      it 'expect none fixed rate variables to be greater than inverting conversion rates' do
+        expect(inverse_currency_operation_to_be_greater).to be(true)
       end
 
       it 'expect twenty_usd not to be greater than fifty_eur' do
         expect(twenty_usd_to_be_greater).to be(false)
+      end
+
+      it 'expect twenty_usd to be greater than a float' do
+        expect(twenty_usd_to_be_greater_a_ten_as_float).to eql(true)
       end
 
       context 'when the currency is the same' do
@@ -200,15 +262,20 @@ describe ConversMoney do
     end
 
     describe '#<' do
-      let(:fifty_eur_to_be_smaller)  { fifty_eur < twenty_usd }
-      let(:twenty_usd_to_be_smaller) { twenty_usd < fifty_eur }
+      let(:inverse_currency_operation_to_be_smaller)  { fifty_eur < twenty_usd }
+      let(:twenty_usd_to_be_smaller)                      { twenty_usd < fifty_eur }
+      let(:twenty_usd_to_be_smaller_than_thirty_as_float) { twenty_usd < 30.00 }
 
-      it 'expect fifty_eur to be smaller than twenty_usd' do
-        expect(fifty_eur_to_be_smaller).to be(false)
+      it 'expect fifty_eur as inverse currency, to be smaller than twenty_usd' do
+        expect(inverse_currency_operation_to_be_smaller).to be(false)
       end
 
       it 'expect twenty_usd not to be smaller than fifty_eur' do
         expect(twenty_usd_to_be_smaller).to be(true)
+      end
+
+      it 'expect twenty_usd to be greater than a float' do
+        expect(twenty_usd_to_be_smaller_than_thirty_as_float).to eql(true)
       end
 
       context 'when the currency is the same' do

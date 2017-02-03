@@ -1,8 +1,10 @@
 require 'convers_money/version'
+require 'pry'
 
 # ConversMoney it's a Money Conversor given by fixed currency and change rates of your choice.
 class ConversMoney
-  attr_accessor :amount, :currency, :second_amount
+  include Comparable
+  attr_accessor :amount, :currency
 
   def initialize(amount, currency)
     @amount = amount
@@ -12,8 +14,16 @@ class ConversMoney
 
   def self.conversion_rates(currency, conversion_rates)
     @conversion_rates ||= {}
-    conversion_rates = Hash[conversion_rates.map { |k, v| [k.upcase, v] }]
+    conversion_rates = Hash[conversion_rates.map { |fixed_currency, rates| [fixed_currency.upcase, rates] }]
     @conversion_rates.merge!(currency.upcase => conversion_rates)
+    unless @conversion_rates.nil? || conversion_rates.nil?
+      @conversion_rates.each do |fixed_currency, rates|
+        rates.map do |currency_rate, value|
+          inverse_conversion = { fixed_currency => format('%.5f', (1 / value)).to_f.round(5) }
+          @conversion_rates = @conversion_rates.merge( currency_rate => inverse_conversion ) unless currency.eql? currency_rate
+        end
+      end
+    end
   end
 
   def self.validate!
@@ -38,7 +48,7 @@ class ConversMoney
     else
       converted_amount = ConversMoney.convert!(@amount, @currency, currency)
       amount_str = format('%.2f', converted_amount)
-      ConversMoney.new(amount_str.to_f, currency)
+      ConversMoney.new(amount_str.to_f.round(2), currency)
     end
   end
 
@@ -46,36 +56,49 @@ class ConversMoney
     "#{format('%.2f', @amount)} #{@currency}"
   end
 
+  def convert_float_to_instance(other, currency)
+    if other.is_a? Float
+      other = ConversMoney.new( other, currency)
+    end
+  end
+
   def +(other)
+    if other.is_a? Float
+      other = ConversMoney.new( other, currency)
+    end
     total_amount = amount + other.convert_to(currency).amount
-    ConversMoney.new(format('%.2f', total_amount), currency)
+    ConversMoney.new(total_amount.to_f.round(2), currency)
   end
 
   def -(other)
+    if other.is_a? Float
+      other = ConversMoney.new( other, currency)
+    end
     total_amount = amount - other.convert_to(currency).amount
-    ConversMoney.new(format('%.2f', total_amount), currency)
+    ConversMoney.new(total_amount.to_f.round(2), currency)
   end
 
   def *(other)
+    if other.is_a? Float
+      other = ConversMoney.new( other, currency)
+    end
     total_amount = amount * other.convert_to(currency).amount
-    ConversMoney.new(format('%.2f', total_amount), currency)
+    ConversMoney.new(total_amount.to_f.round(2), currency)
   end
 
   def /(other)
+    if other.is_a? Float
+      other = ConversMoney.new( other, currency)
+    end
     total_amount = amount / other.convert_to(currency).amount
-    ConversMoney.new(format('%.2f', total_amount), currency)
+    ConversMoney.new(total_amount.to_f.round(2), currency)
   end
 
-  def ==(other)
-    amount == other.convert_to(currency).amount
-  end
-
-  def >(other)
-    amount > other.convert_to(currency).amount
-  end
-
-  def <(other)
-    amount < other.convert_to(currency).amount
+  def <=>(other)
+    if other.is_a? Float
+      other = ConversMoney.new( other.round(2), currency)
+    end
+    amount.round(2) <=> other.convert_to(currency).amount.round(2)
   end
 
   def self.checking_fixed_currency(other, currency)

@@ -28,7 +28,7 @@ Or install it yourself as:
 
 ### Configure the currency rates with respect to a base currency (here EUR):
 ```ruby
-Money.conversion_rates('EUR', {
+ConversMoney.conversion_rates('EUR', {
   'USD'     => 1.11,
   'Bitcoin' => 0.0047
 })
