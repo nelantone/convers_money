@@ -56,58 +56,69 @@ class ConversMoney
     "#{format('%.2f', @amount)} #{@currency}"
   end
 
-  def convert_float_to_instance(other, currency)
-    if other.is_a? Float
-      other = ConversMoney.new( other, currency)
+  def convert_to_reference_currency(other, currency)
+    if (other.is_a? Float ) || (other.is_a? Integer)
+      ConversMoney.new( other, currency)
+    else
+      other.convert_to(currency)
     end
   end
 
   def +(other)
-    if other.is_a? Float
-      other = ConversMoney.new( other, currency)
+    other = convert_to_reference_currency(other, currency)
+    total_amount = amount + other.amount
+    result = ConversMoney.new(total_amount.round(2), currency)
+    if other.amount.is_a? Integer
+      result.amount = result.amount.to_i
+      result
+    else
+      result
     end
-    total_amount = amount + other.convert_to(currency).amount
-    ConversMoney.new(total_amount.to_f.round(2), currency)
   end
 
   def -(other)
-    if other.is_a? Float
-      other = ConversMoney.new( other, currency)
+    other = convert_to_reference_currency(other, currency)
+    total_amount = amount - other.amount
+    result = ConversMoney.new(total_amount.round(2), currency)
+    if other.amount.is_a? Integer
+      result.amount = result.amount.to_i
+      result
+    else
+      result
     end
-    total_amount = amount - other.convert_to(currency).amount
-    ConversMoney.new(total_amount.to_f.round(2), currency)
   end
 
   def *(other)
-    if other.is_a? Float
-      other = ConversMoney.new( other, currency)
+    other = convert_to_reference_currency(other, currency)
+    total_amount = amount * other.amount
+    result = ConversMoney.new(total_amount.round(2), currency)
+    if other.amount.is_a? Integer
+      result.amount = result.amount.to_i
+      result
+    else
+      result
     end
-    total_amount = amount * other.convert_to(currency).amount
-    ConversMoney.new(total_amount.to_f.round(2), currency)
   end
 
   def /(other)
-    if other.is_a? Float
-      other = ConversMoney.new( other, currency)
+    other = convert_to_reference_currency(other, currency)
+    total_amount = amount / other.amount
+    result = ConversMoney.new(total_amount.round(2), currency)
+    if other.amount.is_a? Integer
+      result.amount = result.amount.to_i
+      result
+    else
+      result
     end
-    total_amount = amount / other.convert_to(currency).amount
-    ConversMoney.new(total_amount.to_f.round(2), currency)
   end
 
   def <=>(other)
     if other.is_a? Float
       other = ConversMoney.new( other.round(2), currency)
-    end
-    amount.round(2) <=> other.convert_to(currency).amount.round(2)
-  end
-
-  def self.checking_fixed_currency(other, currency)
-    if other.currency.eql?(currency)
-      other
     else
-      conversion_rates_access
-      other.convert_to(currency)
+      other = convert_to_reference_currency(other, currency)
     end
+    amount.round(2) <=> other.amount.round(2)
   end
 
   def self.conversion_rates_access

@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ['antonelo@gmail.com']
 
   spec.summary       = 'Money conversor'
-  spec.description   = "ConversMoney it's a Money Conversor given by fixed currency and change rates of your choice. \n This version '1.0.0' it's the first full working version"
+  spec.description   = "ConversMoney it's a Money Conversor given by fixed currency and change rates of your choice. \r\n From the version and further '1.0.1' it's a full working version"
   spec.homepage      = 'https://github.com/nelantone/convers_money'
   spec.license       = 'MIT'
 
